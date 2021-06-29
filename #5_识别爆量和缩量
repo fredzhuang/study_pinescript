@@ -1,0 +1,14 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © fredzhuang
+
+study("识别爆量和缩量", title="Vol", overlay=true) // 识别爆量和缩量
+
+length=input(21, "length", minval=1)
+avrg=sma(volume,length)
+
+// 识别爆量和缩量
+uVol = volume > avrg*1.5 and volume[0]>volume[1]
+dVol = volume < avrg*0.5 and volume[0]<volume[1]
+
+plotchar(uVol, "uVol", "↑", location.bottom, color=#FF0000, size = size.tiny)
+plotchar(dVol, "dVol", "↓", location.bottom, color=#00FF00, size = size.tiny)

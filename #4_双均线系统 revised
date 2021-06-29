@@ -1,0 +1,116 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © jchang274 2020-10-10 14:52:43 ->> © fredzhuang 2020-06-29 修改抵扣价颜色和大小，方便辨识;删除日常不用功能
+
+//@version=4
+study("TWO",overlay=true,max_bars_back = 1000)
+//==========功能开关，可按自己需要在设置页面中的顺序==========
+//更改defval的值可以更改默认显示或关闭，调整当前功能中的顺序，自定义设置面板顺序
+TbgSwitchInput = input(defval=false,title="🕵 Deduct Period (ON/OFF) 推演周期显示",type=input.bool)
+moveTime = input(defval=10,title="🐖 Go! Go! Go! 推演周期设置",type=input.integer,minval=3,maxval=39,step=1)
+moveLabel=input(defval=0,title="🐖 Move Lable Forward 抵扣价前移",type=input.integer,minval=0,step=5)
+//以下仅有开关，无参数设置
+GapSwitchInput= input(defval=false,title="✂Show Gaps (ON/OFF) 缺口探测" ,type=input.bool)
+MaSwitchInput = input(defval=true,title="📈 MA System (ON/OFF) SMA均线开关",type=input.bool)
+MaSwitch = MaSwitchInput?40:100
+EmaSwitchInput = input(defval=true,title="📈 EMA System (ON/OFF) EMA均线开关",type=input.bool)
+EmaSwitch = EmaSwitchInput?0:100
+Switch=input(defval=true,title="🕶 Change Candle Color (ON/OFF) K线变色",type=input.bool)
+DKSwitchInput = input(defval=true,title="🌗 Yellow Price Mark (ON/OFF) 抵扣价小黄点",type=input.bool)
+
+//==========System Name 右侧标签简单使用说明==========
+rlabel=label.new(
+     x=bar_index,
+     y=(close[1]+close[20]+close[60]+close[120])/4,
+     text="Two Average System\n\n
+         Thanks to LEI & LoneCapital\n\n
+         使用说明:\n\n
+         实线EMA\n\n
+         虚线SMA\n\n
+         左上角指标☸设置功能\n\n 
+         右上角☸属性关闭边框",
+     style=label.style_label_left,
+     color=color.new(color.yellow,transp=100),
+     textcolor=color.new(color.silver,transp=60),
+     textalign = text.align_center,
+     size=size.large)
+label.delete(rlabel[1])
+    
+//==========GAP Detector缺口探测功能==========
+GapUp1 = (GapSwitchInput==1 and low>high[1])?line.new(bar_index,low,bar_index[1],high[1],extend=extend.none,color=color.fuchsia,width=1):na
+GapUp2 = (GapSwitchInput==1 and low>high[1])?line.new(bar_index,high[1],bar_index[1],low,extend=extend.none,color=color.fuchsia,width=1):na
+GapDown1 = (GapSwitchInput==1 and high<low[1])?line.new(bar_index,high,bar_index[1],low[1],extend=extend.none,color=color.fuchsia,width=1):na
+GapDown2 = (GapSwitchInput==1 and high<low[1])?line.new(bar_index,low[1],bar_index[1],high,extend=extend.none,color=color.fuchsia,width=1):na
+length = 200
+width = 1
+min_pips=1
+gap_start = high[length]
+gap_end = low[length - 1]
+gap_bull = false
+gap_bear = false
+inf_gap = 0.0
+sup_gap = 0.0
+if barstate.islast
+    for j = 1 to length
+        gap_bull := false
+        gap_bear := false
+        inf_gap := 0.0
+        sup_gap := 0.0
+        if high[j] < low[j - 1] //bull gap
+            gap_start := high[j]
+            gap_end := low[j - 1]
+            gap_bull := true
+            inf_gap := gap_start
+            sup_gap := gap_end
+            for i = (j-1) to 0
+                sup_gap := min(sup_gap, low[i])
+            if ((sup_gap - inf_gap)/(syminfo.mintick*10) < min_pips) // only gap > min_pips are considered
+                gap_bull := false
+        if low[j] > high[j - 1] //bear gap
+            gap_start := low[j]
+            gap_end := high[j - 1]
+            gap_bear := true
+            inf_gap := gap_end
+            sup_gap := gap_start
+            for i = (j-1) to 0
+                inf_gap := max(inf_gap, high[i])
+            if ((sup_gap - inf_gap)/(syminfo.mintick*10) < min_pips) // only gap > min_pips pips are considered
+                gap_bear := false
+        if gap_bull and GapSwitchInput==1
+            line_bull_inf = line.new(x1 = bar_index[j], y1 = inf_gap, 
+                                     x2 = bar_index, y2 = inf_gap,
+                                     extend=extend.none, color = color.black, style = line.style_dashed, width = width)
+            line_bull_sup = line.new(x1 = bar_index[j-1], y1 = sup_gap, 
+                                     x2 = bar_index, y2 = sup_gap,
+                                     extend=extend.none, color = color.black, style = line.style_dashed, width = width)
+        if gap_bear and GapSwitchInput==1
+            line_bear_inf = line.new(x1 = bar_index[j-1], y1 = inf_gap, 
+                                     x2 = bar_index, y2 = inf_gap,
+                                     extend=extend.none, color = color.black, style = line.style_dashed, width = width)
+            line_bear_sup = line.new(x1 = bar_index[j], y1 = sup_gap, 
+                                     x2 = bar_index, y2 = sup_gap,
+                                     extend=extend.none, color = color.black, style = line.style_dashed, width = width)
+
+//==========Moving Average System 双均线功能==========
+plot(sma(close,20),linewidth=1,color = bar_index % 3 == 0 and not barstate.islast ? color.new(color.white,100):color.black,transp=MaSwitch,title="MA20",style=plot.style_line,editable=false)
+plot(sma(close,60),linewidth=1,color = bar_index % 3 == 0 and not barstate.islast ? color.new(color.white,100):color.red,transp=MaSwitch,title="MA60",style=plot.style_line,editable=false)
+plot(sma(close,120),linewidth=1,color= bar_index % 3 == 0 and not barstate.islast ? color.new(color.white,100):color.blue,transp=MaSwitch,title="MA120",style=plot.style_line,editable=false)
+plot(ema(close,20),linewidth=1,color=color.black,transp=EmaSwitch,title="EMA20",editable=false)
+plot(ema(close,60),linewidth=1,color=color.red,transp=EmaSwitch,title="EMA60",editable=false)
+plot(ema(close,120),linewidth=1,color=color.blue,transp=EmaSwitch,title="EMA120",editable=false)
+
+//==========Short Trend Change K线变色功能==========
+ConAqua  = close>ema(close,20) and close>sma(close,20) and close>close[20] 
+ConBlack = close<ema(close,20) and close<sma(close,20) and close<close[20] 
+ConGray  = not(ConAqua and ConBlack)
+ChangeColorGray = (ConGray and Switch==1) ? color.silver:na
+ChangeColorAqua = (ConAqua and Switch==1) ? color.aqua:na
+ChangeColorBlack = (ConBlack and Switch==1) ? color.black:na
+barcolor(ChangeColorAqua,editable=false)
+barcolor(ChangeColorBlack,editable=false)
+barcolor(ChangeColorGray,editable=false)
+
+//==========Yellow Price Mark 抵扣价小黄点位置标记==========
+ConLeiDK = barstate.islast and DKSwitchInput==1
+plot(ConLeiDK?close[20+moveLabel]:na,color=#FFC40C,linewidth=5,offset=-moveLabel-20,style=plot.style_circles,editable=false,show_last=1)
+plot(ConLeiDK?close[60+moveLabel]:na,color=#FFC40C,linewidth=5,offset=-moveLabel-60,style=plot.style_circles,editable=false,show_last=1)
+plot(ConLeiDK?close[120+moveLabel]:na,color=#FFC40C,linewidth=5,offset=-moveLabel-120,style=plot.style_circles,editable=false,show_last=1)

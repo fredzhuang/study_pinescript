@@ -1,0 +1,15 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © fredzhuang
+
+//@version=4
+study("RSI")
+r = rsi(close, 20) 
+
+// Detect crosses.
+xUp = crossover(r, 50)
+xDn = crossunder(r, 50)
+
+plotchar(xUp, "Go Long",  "▲", location.bottom, color.lime, size = size.tiny)
+plotchar(xDn, "Go Short", "▼", location.top,    color.red,  size = size.tiny)
+hline(50)
+plot(r)

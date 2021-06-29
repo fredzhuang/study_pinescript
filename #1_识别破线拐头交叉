@@ -1,0 +1,32 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © fredzhuang
+
+//@version=4
+study("PGJ+Vol", overlay=true) // 对破线、拐头、交叉进行识别
+
+sma20 = sma(close, 20)
+sma60 = sma(close, 60)
+sma120 = sma(close, 120)
+
+// 识别向上的破线拐头交叉
+uPX = close[0]>sma20[0] and close[1]<sma20[1] //破线
+uGT = sma20[0]>sma20[1] and sma20[1]<sma20[2] //拐头
+uJC = crossover(sma20, sma60) //交叉
+
+plotchar(uPX, "uPX", "P", location.belowbar, color.red, size = size.tiny)
+plotchar(uGT, "uGT", "G", location.belowbar, color.red, size = size.tiny)
+plotchar(uJC, "uJC", "J", location.belowbar, color.red, size = size.tiny)
+
+// 识别向下的破线拐头交叉
+dPX = close[0]<sma20[0] and close[1]>sma20[1] //破线
+dGT = sma20[0]<sma20[1] and sma20[1]>sma20[2] //拐头
+dJC = crossunder(sma20, sma60) //交叉
+
+plotchar(dPX, "dPX", "P", location.abovebar, color.lime, size = size.tiny)
+plotchar(dGT, "dGT", "G", location.abovebar, color.lime, size = size.tiny)
+plotchar(dJC, "dJC", "J", location.abovebar, color.lime, size = size.tiny)
+
+
+
+
+

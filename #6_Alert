@@ -1,0 +1,45 @@
+study("notice", overlay=true)
+
+// 识别向上的破线拐头交叉
+
+sma20 = sma(close, 20)
+sma60 = sma(close, 60)
+sma120 = sma(close, 120)
+
+uPX = close[0]>sma20[0] and close[1]<sma20[1] //破线
+uGT = sma20[0]>sma20[1] and sma20[1]<sma20[2] //拐头
+uJC = crossover(sma20, sma60) //交叉
+
+// 识别向下的破线拐头交叉
+dPX = close[0]<sma20[0] and close[1]>sma20[1] //破线
+dGT = sma20[0]<sma20[1] and sma20[1]>sma20[2] //拐头
+dJC = crossunder(sma20, sma60) //交叉
+
+alertcondition(uPX, title="向上破线", message="向上破线 {{close}} - {{time}}")
+alertcondition(uGT, title="向上拐头", message="向上拐头 {{close}} - {{time}}")
+alertcondition(uJC, title="向上交叉", message="向上交叉 {{close}} - {{time}}")
+
+alertcondition(dPX, title="向下破线", message="向下破线 {{close}} - {{time}}")
+alertcondition(dGT, title="向下拐头", message="向下拐头 {{close}} - {{time}}")
+alertcondition(dJC, title="向下交叉", message="向下交叉 {{close}} - {{time}}")
+
+// 识别爆量和缩量
+
+length=input(21, "length", minval=1)
+avrg=sma(volume,length)
+
+uVol = volume > avrg*1.5 and volume[0]>volume[1]
+dVol = volume < avrg*0.5 and volume[0]<volume[1]
+
+alertcondition(uVol, title="放量", message="放量 {{time}}")
+alertcondition(dVol, title="缩量", message="缩量 {{time}}")
+
+// RSI策略
+
+r = rsi(close, 20) 
+xUp = crossover(r, 50)
+xDn = crossunder(r, 50)
+
+alertcondition(xUp, title="RSI强化", message="RSI强化 {{time}}")
+alertcondition(xDn, title="RSI弱化", message="RSI弱化 {{time}}")
+
